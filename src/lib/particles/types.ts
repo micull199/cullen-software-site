@@ -35,11 +35,14 @@ export interface ParticleConfig {
 	damping: number;
 	maxVelocity: number;
 	blobRadius: number; // radius of the resting blob shape
+	ringRadius: number; // radius of the circular border ring (computed at runtime)
+	ringGravity: number; // how strongly ring particles pull toward the circumference
+	ringParticleRatio: number; // fraction of particles assigned to the ring
 	colors: [number, number, number][];
 }
 
 export const DEFAULT_CONFIG: ParticleConfig = {
-	maxParticles: 1800,
+	maxParticles: 3600,
 	mouseRepelRadius: 160,
 	mouseRepelStrength: 12,
 	centerGravity: 0.003,
@@ -51,6 +54,9 @@ export const DEFAULT_CONFIG: ParticleConfig = {
 	damping: 0.82,
 	maxVelocity: 2,
 	blobRadius: 0, // computed at runtime from viewport
+	ringRadius: 0, // computed at runtime from viewport
+	ringGravity: 0.002,
+	ringParticleRatio: 0.25, // 25% of particles go to the ring
 	colors: [
 		[40, 120, 200], // steel blue
 		[60, 80, 180],  // deep blue

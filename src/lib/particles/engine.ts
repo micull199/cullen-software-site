@@ -42,7 +42,7 @@ export class ParticleEngine {
 
 		// Adapt particle count for mobile
 		if (window.innerWidth < 768) {
-			this.config.maxParticles = Math.min(this.config.maxParticles, 1000);
+			this.config.maxParticles = Math.min(this.config.maxParticles, 1800);
 		}
 
 		this.dpr = 1;
@@ -70,6 +70,8 @@ export class ParticleEngine {
 
 		// Blob radius scales with viewport
 		this.config.blobRadius = Math.min(this.width, this.height) * 0.3;
+		// Ring radius — large circle that fits within the viewport with some margin
+		this.config.ringRadius = Math.min(this.width, this.height) * 0.42;
 	}
 
 	set mouseEnabled(enabled: boolean) {
@@ -83,14 +85,30 @@ export class ParticleEngine {
 	private initParticles() {
 		this.particles = [];
 		const blobR = this.config.blobRadius;
+		const ringR = this.config.ringRadius;
+		const ringCount = Math.floor(this.config.maxParticles * this.config.ringParticleRatio);
+		const blobCount = this.config.maxParticles - ringCount;
 
-		for (let i = 0; i < this.config.maxParticles; i++) {
-			// Distribute within an elliptical blob at center
-			// Use gaussian-ish distribution for density toward center
+		// Blob particles — center mass
+		for (let i = 0; i < blobCount; i++) {
 			const angle = Math.random() * Math.PI * 2;
 			const r = blobR * Math.sqrt(Math.random()) * (0.6 + Math.random() * 0.4);
-			const x = this.centerX + Math.cos(angle) * r * 1.3; // wider than tall
+			const x = this.centerX + Math.cos(angle) * r * 1.3;
 			const y = this.centerY + Math.sin(angle) * r * 0.8;
+
+			const p = createParticle(x, y, this.config.colors);
+			p.restX = x;
+			p.restY = y;
+			this.particles.push(p);
+		}
+
+		// Ring particles — distributed along the circumference with slight scatter
+		for (let i = 0; i < ringCount; i++) {
+			const angle = (i / ringCount) * Math.PI * 2 + Math.random() * 0.1;
+			const scatter = (Math.random() - 0.5) * 30; // slight radial scatter
+			const r = ringR + scatter;
+			const x = this.centerX + Math.cos(angle) * r;
+			const y = this.centerY + Math.sin(angle) * r;
 
 			const p = createParticle(x, y, this.config.colors);
 			p.restX = x;
