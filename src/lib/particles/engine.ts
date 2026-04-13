@@ -35,6 +35,10 @@ export class ParticleEngine {
 	private gravityCenterY = 0;
 	private gravityCenterVX = 0;
 	private gravityCenterVY = 0;
+	private windOriginX = 0;
+	private windOriginY = 0;
+	private windOriginVX = 0;
+	private windOriginVY = 0;
 
 	constructor(canvas: HTMLCanvasElement, config?: Partial<ParticleConfig>) {
 		this.canvas = canvas;
@@ -53,6 +57,8 @@ export class ParticleEngine {
 		this.resize();
 		this.gravityCenterX = this.centerX;
 		this.gravityCenterY = this.centerY;
+		this.windOriginX = this.centerX;
+		this.windOriginY = this.centerY;
 		this.grid = new SpatialGrid(
 			this.width,
 			this.height,
@@ -272,6 +278,51 @@ export class ParticleEngine {
 			this.gravityCenterY = this.centerY + ny * gcBounceLimit;
 		}
 
+		// Wind origin physics — separate from gravity, pushed by mouse, bounces off smaller ring
+		const windBounceLimit = ringR * 0.7 - 100; // 100px smaller than gravity bounce
+		const windDamping = 0.97;
+		const windReturnStrength = 0.0005;
+
+		if (this._mouseEnabled && this.mouse.x > 0) {
+			const wdx = this.mouse.x - this.windOriginX;
+			const wdy = this.mouse.y - this.windOriginY;
+			this.windOriginVX += wdx * 0.004;
+			this.windOriginVY += wdy * 0.004;
+		}
+
+		// Gentle return to center
+		this.windOriginVX += (this.centerX - this.windOriginX) * windReturnStrength;
+		this.windOriginVY += (this.centerY - this.windOriginY) * windReturnStrength;
+
+		this.windOriginVX *= windDamping;
+		this.windOriginVY *= windDamping;
+
+		this.windOriginX += this.windOriginVX;
+		this.windOriginY += this.windOriginVY;
+
+		// Bounce off smaller ring
+		const woDX = this.windOriginX - this.centerX;
+		const woDY = this.windOriginY - this.centerY;
+		const woDist = Math.sqrt(woDX * woDX + woDY * woDY);
+		if (woDist > windBounceLimit && windBounceLimit > 0) {
+			const wnx = woDX / woDist;
+			const wny = woDY / woDist;
+			const wdot = this.windOriginVX * wnx + this.windOriginVY * wny;
+			if (wdot > 0) {
+				this.windOriginVX -= 2 * wdot * wnx * 0.5;
+				this.windOriginVY -= 2 * wdot * wny * 0.5;
+			}
+			// Random tangential kick
+			const wtx = -wny;
+			const wty = wnx;
+			const wkick = (Math.random() - 0.5) * 2.0;
+			this.windOriginVX += wtx * wkick;
+			this.windOriginVY += wty * wkick;
+
+			this.windOriginX = this.centerX + wnx * windBounceLimit;
+			this.windOriginY = this.centerY + wny * windBounceLimit;
+		}
+
 		// Build spatial grid
 		this.grid.clear();
 
@@ -288,7 +339,7 @@ export class ParticleEngine {
 			applyCenterGravity(p, this.gravityCenterX, this.gravityCenterY, this.config);
 
 			// Subtle wind drift
-			applyWind(p, time, this.gravityCenterX, this.gravityCenterY);
+			applyWind(p, time, this.windOriginX, this.windOriginY);
 
 			// Mouse repulsion — only when enabled (disabled on page overlays)
 			if (this._mouseEnabled && this.mouse.x > 0) {
