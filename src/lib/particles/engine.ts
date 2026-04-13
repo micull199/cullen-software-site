@@ -288,7 +288,7 @@ export class ParticleEngine {
 			applyCenterGravity(p, this.gravityCenterX, this.gravityCenterY, this.config);
 
 			// Subtle wind drift
-			applyWind(p, time);
+			applyWind(p, time, this.gravityCenterX, this.gravityCenterY);
 
 			// Mouse repulsion — only when enabled (disabled on page overlays)
 			if (this._mouseEnabled && this.mouse.x > 0) {

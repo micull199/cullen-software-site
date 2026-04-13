@@ -66,25 +66,33 @@ export function applyMouseRepulsionContinuous(
 
 export function applyWind(
 	particle: Particle,
-	time: number
+	time: number,
+	centerX: number,
+	centerY: number
 ) {
 	const t = time * 0.0006;
 	const px = particle.phaseOffset;
 
-	// Intense swirling wind
-	const windAngle = t * 0.8 + Math.sin(t * 0.3) * 1.5;
+	// Direction from center to particle — wind blows outward
+	const dx = particle.x - centerX;
+	const dy = particle.y - centerY;
+	const dist = Math.sqrt(dx * dx + dy * dy);
+	if (dist < 1) return;
+
+	const nx = dx / dist;
+	const ny = dy / dist;
+
+	// Outward force with per-particle variation in strength and timing
 	const baseStrength = 3.5;
-	const swirl = baseStrength + Math.sin(t * 1.7 + px) * 1.2;
+	const pulse = baseStrength + Math.sin(t * 1.7 + px * 3.0) * 1.5;
 
-	const windX = Math.cos(windAngle) * swirl;
-	const windY = Math.sin(windAngle) * swirl;
+	// Random angular scatter — each particle gets pushed slightly off-radial
+	const scatter = Math.sin(t * 2.3 + px * 5.1) * 0.6;
+	const scatterX = nx * Math.cos(scatter) - ny * Math.sin(scatter);
+	const scatterY = nx * Math.sin(scatter) + ny * Math.cos(scatter);
 
-	// Strong per-particle turbulence
-	const turbX = Math.sin(t * 3.1 + px * 2.3) * 1.0;
-	const turbY = Math.cos(t * 2.7 + px * 1.8) * 1.0;
-
-	particle.vx += windX + turbX;
-	particle.vy += windY + turbY;
+	particle.vx += scatterX * pulse;
+	particle.vy += scatterY * pulse;
 }
 
 export function updateParticle(
