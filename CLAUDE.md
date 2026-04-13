@@ -144,6 +144,12 @@ A minimalist, immersive single-page website for **Cullen Software** — a custom
 - **Performance is a feature**: Janky particles ruin immersion. Prioritize smooth 60fps over particle count.
 - **Interactive = alive**: The cursor interaction is what makes this special. It should feel like you're touching the particles.
 
+## Git Workflow
+
+- **Repository**: https://github.com/micull199/cullen-software-site
+- **Commit after every major change** — feature additions, significant refactors, or design iterations should each get their own commit and push to the remote
+- Use descriptive commit messages summarizing what changed and why
+
 ## Commands
 
 ```bash
