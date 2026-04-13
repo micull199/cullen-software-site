@@ -278,16 +278,20 @@ export class ParticleEngine {
 			this.gravityCenterY = this.centerY + ny * gcBounceLimit;
 		}
 
-		// Wind origin physics — separate from gravity, pushed by mouse, bounces off smaller ring
-		const windBounceLimit = ringR * 0.7 - 100; // 100px smaller than gravity bounce
-		const windDamping = 0.97;
-		const windReturnStrength = 0.0005;
+		// Wind origin physics — pulled by cursor gravity, floats around freely
+		const windBounceLimit = ringR * 0.7 - 100;
+		const windDamping = 0.99; // very little friction — floats freely
+		const windReturnStrength = 0.0002; // barely pulls back to center
 
 		if (this._mouseEnabled && this.mouse.x > 0) {
+			// Strong gravitational pull toward cursor
 			const wdx = this.mouse.x - this.windOriginX;
 			const wdy = this.mouse.y - this.windOriginY;
-			this.windOriginVX += wdx * 0.004;
-			this.windOriginVY += wdy * 0.004;
+			const wDist = Math.sqrt(wdx * wdx + wdy * wdy);
+			// Gravitational — stronger when closer
+			const pullForce = wDist > 10 ? 0.008 + (200 / (wDist + 100)) * 0.005 : 0;
+			this.windOriginVX += wdx * pullForce;
+			this.windOriginVY += wdy * pullForce;
 		}
 
 		// Gentle return to center

@@ -82,12 +82,12 @@ export function applyWind(
 	const nx = dx / dist;
 	const ny = dy / dist;
 
-	// Outward force with per-particle variation in strength and timing
-	const baseStrength = 3.5;
-	const pulse = baseStrength + Math.sin(t * 1.7 + px * 3.0) * 1.5;
+	// Gentle outward force with per-particle variation
+	const baseStrength = 0.15;
+	const pulse = baseStrength + Math.sin(t * 1.7 + px * 3.0) * 0.06;
 
-	// Random angular scatter — each particle gets pushed slightly off-radial
-	const scatter = Math.sin(t * 2.3 + px * 5.1) * 0.6;
+	// Slight angular scatter for organic feel
+	const scatter = Math.sin(t * 2.3 + px * 5.1) * 0.4;
 	const scatterX = nx * Math.cos(scatter) - ny * Math.sin(scatter);
 	const scatterY = nx * Math.sin(scatter) + ny * Math.cos(scatter);
 
