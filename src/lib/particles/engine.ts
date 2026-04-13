@@ -33,6 +33,8 @@ export class ParticleEngine {
 	private _mouseEnabled = true;
 	private gravityCenterX = 0;
 	private gravityCenterY = 0;
+	private gravityCenterVX = 0;
+	private gravityCenterVY = 0;
 
 	constructor(canvas: HTMLCanvasElement, config?: Partial<ParticleConfig>) {
 		this.canvas = canvas;
@@ -208,25 +210,51 @@ export class ParticleEngine {
 	};
 
 	private update(time: number) {
-		// Shift gravity center subtly toward the mouse position
-		const maxDrift = 60; // max pixels the gravity center can drift from true center
-		const lerpSpeed = 0.02; // how fast it follows the mouse
+		// Gravity center has its own physics — pulled by mouse, bounces off ring
+		const pullStrength = 0.003; // how strongly mouse pulls gravity center
+		const returnStrength = 0.0008; // how strongly it drifts back to true center
+		const gcDamping = 0.95;
+		const ringR = this.config.ringRadius;
+		const gcBounceLimit = ringR * 0.7; // gravity center bounces before the particle ring
 
 		if (this._mouseEnabled && this.mouse.x > 0) {
-			// Target: a point between true center and mouse, clamped by maxDrift
-			const dx = this.mouse.x - this.centerX;
-			const dy = this.mouse.y - this.centerY;
-			const dist = Math.sqrt(dx * dx + dy * dy);
-			const clampedDist = Math.min(dist, maxDrift);
-			const targetX = dist > 0 ? this.centerX + (dx / dist) * clampedDist : this.centerX;
-			const targetY = dist > 0 ? this.centerY + (dy / dist) * clampedDist : this.centerY;
+			// Pull toward mouse
+			const dx = this.mouse.x - this.gravityCenterX;
+			const dy = this.mouse.y - this.gravityCenterY;
+			this.gravityCenterVX += dx * pullStrength;
+			this.gravityCenterVY += dy * pullStrength;
+		}
 
-			this.gravityCenterX += (targetX - this.gravityCenterX) * lerpSpeed;
-			this.gravityCenterY += (targetY - this.gravityCenterY) * lerpSpeed;
-		} else {
-			// Drift back to true center
-			this.gravityCenterX += (this.centerX - this.gravityCenterX) * lerpSpeed;
-			this.gravityCenterY += (this.centerY - this.gravityCenterY) * lerpSpeed;
+		// Always pull back toward true center (spring)
+		const returnDX = this.centerX - this.gravityCenterX;
+		const returnDY = this.centerY - this.gravityCenterY;
+		this.gravityCenterVX += returnDX * returnStrength;
+		this.gravityCenterVY += returnDY * returnStrength;
+
+		// Apply damping
+		this.gravityCenterVX *= gcDamping;
+		this.gravityCenterVY *= gcDamping;
+
+		// Update position
+		this.gravityCenterX += this.gravityCenterVX;
+		this.gravityCenterY += this.gravityCenterVY;
+
+		// Bounce off ring boundary
+		const gcDX = this.gravityCenterX - this.centerX;
+		const gcDY = this.gravityCenterY - this.centerY;
+		const gcDist = Math.sqrt(gcDX * gcDX + gcDY * gcDY);
+		if (gcDist > gcBounceLimit) {
+			const nx = gcDX / gcDist;
+			const ny = gcDY / gcDist;
+			// Reflect outward velocity
+			const dot = this.gravityCenterVX * nx + this.gravityCenterVY * ny;
+			if (dot > 0) {
+				this.gravityCenterVX -= 2 * dot * nx * 0.5;
+				this.gravityCenterVY -= 2 * dot * ny * 0.5;
+			}
+			// Push back inside
+			this.gravityCenterX = this.centerX + nx * gcBounceLimit;
+			this.gravityCenterY = this.centerY + ny * gcBounceLimit;
 		}
 
 		// Build spatial grid
