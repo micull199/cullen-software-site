@@ -73,16 +73,16 @@ export function applyWind(
 
 	// Strong swirling wind — rotates direction over time for circular movement
 	const windAngle = t * 0.8 + Math.sin(t * 0.3) * 1.5;
-	const baseStrength = 0.08;
-	const swirl = baseStrength + Math.sin(t * 1.7 + px) * 0.03;
+	const baseStrength = 0.35;
+	const swirl = baseStrength + Math.sin(t * 1.7 + px) * 0.12;
 
 	// Main directional wind that rotates
 	const windX = Math.cos(windAngle) * swirl;
 	const windY = Math.sin(windAngle) * swirl;
 
 	// Per-particle turbulence so they don't all move in lockstep
-	const turbX = Math.sin(t * 3.1 + px * 2.3) * 0.025;
-	const turbY = Math.cos(t * 2.7 + px * 1.8) * 0.025;
+	const turbX = Math.sin(t * 3.1 + px * 2.3) * 0.1;
+	const turbY = Math.cos(t * 2.7 + px * 1.8) * 0.1;
 
 	particle.vx += windX + turbX;
 	particle.vy += windY + turbY;
