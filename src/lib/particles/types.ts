@@ -45,7 +45,7 @@ export const DEFAULT_CONFIG: ParticleConfig = {
 	maxParticles: 3600,
 	mouseRepelRadius: 160,
 	mouseRepelStrength: 12,
-	centerGravity: 0.003,
+	centerGravity: 0.006,
 	cohesionRadius: 60,
 	cohesionStrength: 0.0004,
 	separationRadius: 18,

@@ -210,12 +210,20 @@ export class ParticleEngine {
 	};
 
 	private update(time: number) {
-		// Gravity center has its own physics — pulled by mouse, bounces off ring
-		const pullStrength = 0.003; // how strongly mouse pulls gravity center
-		const returnStrength = 0.0008; // how strongly it drifts back to true center
-		const gcDamping = 0.95;
+		// Gravity center has its own physics — autonomous movement, mouse influence, ring bounce
+		const pullStrength = 0.005; // stronger mouse pull
+		const returnStrength = 0.0003; // very gentle return to center
+		const gcDamping = 0.98; // less damping = more speed retained
+		const driftStrength = 0.15; // autonomous random drift force
 		const ringR = this.config.ringRadius;
-		const gcBounceLimit = ringR * 0.7; // gravity center bounces before the particle ring
+		const gcBounceLimit = ringR * 0.7;
+
+		// Autonomous drift — slowly varying random direction
+		const t = time * 0.0003;
+		const driftX = Math.sin(t * 1.7 + 3.1) * driftStrength + Math.sin(t * 0.7) * driftStrength * 0.5;
+		const driftY = Math.cos(t * 1.3 + 1.7) * driftStrength + Math.cos(t * 0.9) * driftStrength * 0.5;
+		this.gravityCenterVX += driftX;
+		this.gravityCenterVY += driftY;
 
 		if (this._mouseEnabled && this.mouse.x > 0) {
 			// Pull toward mouse
@@ -225,7 +233,7 @@ export class ParticleEngine {
 			this.gravityCenterVY += dy * pullStrength;
 		}
 
-		// Always pull back toward true center (spring)
+		// Gentle pull back toward true center
 		const returnDX = this.centerX - this.gravityCenterX;
 		const returnDY = this.centerY - this.gravityCenterY;
 		this.gravityCenterVX += returnDX * returnStrength;
@@ -239,7 +247,7 @@ export class ParticleEngine {
 		this.gravityCenterX += this.gravityCenterVX;
 		this.gravityCenterY += this.gravityCenterVY;
 
-		// Bounce off ring boundary
+		// Bounce off ring boundary — add random deflection for unpredictable movement
 		const gcDX = this.gravityCenterX - this.centerX;
 		const gcDY = this.gravityCenterY - this.centerY;
 		const gcDist = Math.sqrt(gcDX * gcDX + gcDY * gcDY);
@@ -249,9 +257,16 @@ export class ParticleEngine {
 			// Reflect outward velocity
 			const dot = this.gravityCenterVX * nx + this.gravityCenterVY * ny;
 			if (dot > 0) {
-				this.gravityCenterVX -= 2 * dot * nx * 0.5;
-				this.gravityCenterVY -= 2 * dot * ny * 0.5;
+				this.gravityCenterVX -= 2 * dot * nx * 0.6;
+				this.gravityCenterVY -= 2 * dot * ny * 0.6;
 			}
+			// Add random tangential kick on bounce for unpredictable direction
+			const tangentX = -ny;
+			const tangentY = nx;
+			const kick = (Math.random() - 0.5) * 2.5;
+			this.gravityCenterVX += tangentX * kick;
+			this.gravityCenterVY += tangentY * kick;
+
 			// Push back inside
 			this.gravityCenterX = this.centerX + nx * gcBounceLimit;
 			this.gravityCenterY = this.centerY + ny * gcBounceLimit;
