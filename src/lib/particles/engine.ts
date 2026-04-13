@@ -31,6 +31,8 @@ export class ParticleEngine {
 	private centerY = 0;
 	private prefersReducedMotion = false;
 	private _mouseEnabled = true;
+	private gravityCenterX = 0;
+	private gravityCenterY = 0;
 
 	constructor(canvas: HTMLCanvasElement, config?: Partial<ParticleConfig>) {
 		this.canvas = canvas;
@@ -47,6 +49,8 @@ export class ParticleEngine {
 
 		this.dpr = 1;
 		this.resize();
+		this.gravityCenterX = this.centerX;
+		this.gravityCenterY = this.centerY;
 		this.grid = new SpatialGrid(
 			this.width,
 			this.height,
@@ -71,7 +75,7 @@ export class ParticleEngine {
 		// Blob radius scales with viewport
 		this.config.blobRadius = Math.min(this.width, this.height) * 0.3;
 		// Ring radius — circular bounce boundary
-		this.config.ringRadius = Math.min(this.width, this.height) * 0.35;
+		this.config.ringRadius = Math.min(this.width, this.height) * 0.40;
 	}
 
 	set mouseEnabled(enabled: boolean) {
@@ -204,6 +208,27 @@ export class ParticleEngine {
 	};
 
 	private update(time: number) {
+		// Shift gravity center subtly toward the mouse position
+		const maxDrift = 60; // max pixels the gravity center can drift from true center
+		const lerpSpeed = 0.02; // how fast it follows the mouse
+
+		if (this._mouseEnabled && this.mouse.x > 0) {
+			// Target: a point between true center and mouse, clamped by maxDrift
+			const dx = this.mouse.x - this.centerX;
+			const dy = this.mouse.y - this.centerY;
+			const dist = Math.sqrt(dx * dx + dy * dy);
+			const clampedDist = Math.min(dist, maxDrift);
+			const targetX = dist > 0 ? this.centerX + (dx / dist) * clampedDist : this.centerX;
+			const targetY = dist > 0 ? this.centerY + (dy / dist) * clampedDist : this.centerY;
+
+			this.gravityCenterX += (targetX - this.gravityCenterX) * lerpSpeed;
+			this.gravityCenterY += (targetY - this.gravityCenterY) * lerpSpeed;
+		} else {
+			// Drift back to true center
+			this.gravityCenterX += (this.centerX - this.gravityCenterX) * lerpSpeed;
+			this.gravityCenterY += (this.centerY - this.gravityCenterY) * lerpSpeed;
+		}
+
 		// Build spatial grid
 		this.grid.clear();
 
@@ -216,8 +241,8 @@ export class ParticleEngine {
 				continue;
 			}
 
-			// Center gravity — spring back to rest position
-			applyCenterGravity(p, this.centerX, this.centerY, this.config);
+			// Center gravity — pulls toward the drifting gravity center
+			applyCenterGravity(p, this.gravityCenterX, this.gravityCenterY, this.config);
 
 			// Subtle wind drift
 			applyWind(p, time);
