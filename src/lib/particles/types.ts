@@ -52,7 +52,7 @@ export const DEFAULT_CONFIG: ParticleConfig = {
 	separationStrength: 0.05,
 	connectionMaxDistance: 120,
 	damping: 0.82,
-	maxVelocity: 2,
+	maxVelocity: 8,
 	blobRadius: 0, // computed at runtime from viewport
 	ringRadius: 0, // computed at runtime from viewport
 	ringBounce: 0.6, // elastic bounce factor
