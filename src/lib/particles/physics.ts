@@ -102,12 +102,41 @@ export function updateParticle(
 	particle.x += particle.vx;
 	particle.y += particle.vy;
 
-	// Soft boundary — push back from edges
-	const margin = 20;
-	if (particle.x < margin) particle.vx += 0.5;
-	if (particle.x > width - margin) particle.vx -= 0.5;
-	if (particle.y < margin) particle.vy += 0.5;
-	if (particle.y > height - margin) particle.vy -= 0.5;
+	// Ring boundary — elastic bounce
+	if (config.ringRadius > 0) {
+		const centerX = width / 2;
+		const centerY = height / 2;
+		const dx = particle.x - centerX;
+		const dy = particle.y - centerY;
+		const distFromCenter = Math.sqrt(dx * dx + dy * dy);
+		const ringR = config.ringRadius;
+		const softZone = config.ringSoftness;
+
+		if (distFromCenter > ringR - softZone) {
+			const nx = dx / distFromCenter; // normal pointing outward
+			const ny = dy / distFromCenter;
+
+			if (distFromCenter >= ringR) {
+				// Past the boundary — reflect velocity inward and push back
+				const dot = particle.vx * nx + particle.vy * ny;
+				if (dot > 0) {
+					// Only reflect outward-moving component
+					particle.vx -= 2 * dot * nx * config.ringBounce;
+					particle.vy -= 2 * dot * ny * config.ringBounce;
+				}
+				// Push particle back inside
+				const overshoot = distFromCenter - ringR;
+				particle.x -= nx * overshoot;
+				particle.y -= ny * overshoot;
+			} else {
+				// In the soft zone — gentle inward push that increases toward the edge
+				const penetration = (distFromCenter - (ringR - softZone)) / softZone;
+				const pushForce = penetration * penetration * 0.5;
+				particle.vx -= nx * pushForce;
+				particle.vy -= ny * pushForce;
+			}
+		}
+	}
 
 	// Decay collision energy
 	if (particle.collisionEnergy > 0) {

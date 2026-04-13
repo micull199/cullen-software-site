@@ -35,9 +35,9 @@ export interface ParticleConfig {
 	damping: number;
 	maxVelocity: number;
 	blobRadius: number; // radius of the resting blob shape
-	ringRadius: number; // radius of the circular border ring (computed at runtime)
-	ringGravity: number; // how strongly ring particles pull toward the circumference
-	ringParticleRatio: number; // fraction of particles assigned to the ring
+	ringRadius: number; // radius of the circular bounce boundary (computed at runtime)
+	ringBounce: number; // elasticity of the ring boundary (0-1, 1 = perfect bounce)
+	ringSoftness: number; // how far inside the ring the force starts (px)
 	colors: [number, number, number][];
 }
 
@@ -55,8 +55,8 @@ export const DEFAULT_CONFIG: ParticleConfig = {
 	maxVelocity: 2,
 	blobRadius: 0, // computed at runtime from viewport
 	ringRadius: 0, // computed at runtime from viewport
-	ringGravity: 0.002,
-	ringParticleRatio: 0.25, // 25% of particles go to the ring
+	ringBounce: 0.6, // elastic bounce factor
+	ringSoftness: 40, // soft boundary zone inside the ring edge
 	colors: [
 		[40, 120, 200], // steel blue
 		[60, 80, 180],  // deep blue
