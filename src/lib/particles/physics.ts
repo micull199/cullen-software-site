@@ -68,13 +68,24 @@ export function applyWind(
 	particle: Particle,
 	time: number
 ) {
-	// Subtle, slowly varying wind using layered sine waves per particle
-	const t = time * 0.0001;
+	const t = time * 0.0002;
 	const px = particle.phaseOffset;
-	const windX = Math.sin(t * 1.3 + px) * 0.012 + Math.sin(t * 3.7 + px * 2.1) * 0.006;
-	const windY = Math.cos(t * 1.1 + px * 0.7) * 0.008 + Math.sin(t * 2.9 + px * 1.4) * 0.004;
-	particle.vx += windX;
-	particle.vy += windY;
+
+	// Strong swirling wind — rotates direction over time for circular movement
+	const windAngle = t * 0.8 + Math.sin(t * 0.3) * 1.5;
+	const baseStrength = 0.08;
+	const swirl = baseStrength + Math.sin(t * 1.7 + px) * 0.03;
+
+	// Main directional wind that rotates
+	const windX = Math.cos(windAngle) * swirl;
+	const windY = Math.sin(windAngle) * swirl;
+
+	// Per-particle turbulence so they don't all move in lockstep
+	const turbX = Math.sin(t * 3.1 + px * 2.3) * 0.025;
+	const turbY = Math.cos(t * 2.7 + px * 1.8) * 0.025;
+
+	particle.vx += windX + turbX;
+	particle.vy += windY + turbY;
 }
 
 export function updateParticle(
